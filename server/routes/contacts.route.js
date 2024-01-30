@@ -1,5 +1,6 @@
 import express from "express";
 import { ObjectId } from "mongodb";
+import Contacts from "../models/user.model.js";
 
 // Create Express app
 const router = express.Router();
@@ -12,7 +13,7 @@ router.use(express.json()); // to parse JSON bodies
 // GET all contacts
 router.get("/", async (req, res) => {
   try {
-    const users = await db.collection("users").find().toArray();
+    const users = await Contacts.find().sort({ first: 1, last: 1 }).exec();
     res.json(users);
   } catch (error) {
     console.error(error);
@@ -25,9 +26,7 @@ router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const contact = await db
-      .collection("users")
-      .findOne({ _id: new ObjectId(id) });
+    const contact = await Contacts.findOne({ _id: new ObjectId(id) });
 
     if (!contact) {
       return res.status(404).send("No contact found with the given ID");
