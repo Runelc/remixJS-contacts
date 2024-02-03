@@ -63,14 +63,15 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { image, mail, name, title } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send("Invalid ID format");
+    }
 
-    const result = await db
-      .collection("users")
-      .updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { image, mail, name, title } }
-      );
+    const { avatar, twitter, first, last } = req.body;
+    const result = await Contacts.updateOne(
+      { _id: id },
+      { $set: { avatar, twitter, first, last } }
+    );
 
     if (result.matchedCount === 0) {
       return res.status(404).send("No contact found with the given ID");
@@ -89,9 +90,7 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db
-      .collection("users")
-      .deleteOne({ _id: new ObjectId(id) });
+    const result = await Contacts.deleteOne({ _id: id });
 
     if (result.deletedCount === 0) {
       return res.status(404).send("No contact found with the given ID");
