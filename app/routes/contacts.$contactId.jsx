@@ -23,6 +23,7 @@ export const loader = async ({ request, params }) => {
 
 /* Action for the Favorite handling */
 export const action = async ({ request, params }) => {
+  invariant(params.contactId, "Missing contactId param");
   const contactId = params.contactId;
   const requestUrl = new URL(request.url);
   const apiUrl = `${requestUrl.origin}/api/contacts/${contactId}/favorite`;
