@@ -1,6 +1,8 @@
 import express from "express";
-import { ObjectId } from "mongodb";
+/* import { ObjectId } from "mongodb"; */
 import Contacts from "../models/user.model.js";
+import mongoose from "mongoose";
+import { ObjectId } from "mongoose";
 
 // Create Express app
 const router = express.Router();
@@ -24,30 +26,29 @@ router.get("/", async (req, res) => {
 // GET one contact by id
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const user = await Contacts.findById(req.params.id);
 
-    const contact = await Contacts.findOne({ _id: new ObjectId(id) });
-
-    if (!contact) {
-      return res.status(404).send("No contact found with the given ID");
+    if (!user) {
+      return res.status(404).send("User not found");
     }
 
-    res.json(contact);
+    res.json(user);
   } catch (error) {
-    console.log(error);
-    res.status(500).send("Error retrieving contact from database");
+    console.error("Error fetching user:", error);
+    res.status(500).send("Error fetching user from database");
   }
 });
 
 // POST create a new contact
 router.post("/", async (req, res) => {
   try {
-    const { image, mail, name, title } = req.body;
-    const newUser = await db.collection("users").insertOne({
-      image,
-      mail,
-      name,
-      title,
+    const { avatar, first, last, twitter } = req.body;
+    const newUser = await Contacts.insertOne({
+      avatar,
+      first,
+      last,
+      twitter,
+      favorite: false,
     });
     res.json({ _id: newUser.insertedId });
   } catch (error) {
@@ -135,24 +136,28 @@ router.get("/search", async (req, res) => {
 router.put("/:id/favorite", async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await db
-      .collection("users")
-      .findOne({ _id: new ObjectId(id) });
+
+    // Check if the provided ID is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send("Invalid ID");
+    }
+
+    // Find the contact by ID using Mongoose
+    const contact = await Contacts.findById(id);
+
     if (!contact) {
       return res.status(404).send("No contact found with the given ID");
     }
 
-    const updatedFavoriteStatus = !contact.favorite;
-    await db
-      .collection("users")
-      .updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { favorite: updatedFavoriteStatus } }
-      );
+    // Toggle the favorite status
+    contact.favorite = !contact.favorite;
+
+    // Save the updated contact using Mongoose
+    await contact.save();
 
     res.json({
       _id: id,
-      message: `Contact favorite status toggled to ${updatedFavoriteStatus}`,
+      message: `Contact favorite status toggled to ${contact.favorite}`,
     });
   } catch (error) {
     console.log(error);
